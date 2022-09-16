@@ -1,34 +1,76 @@
 import math
 
+# CONSTANT DECLARATIONS
 oofpez = 9 * pow(10,9)
 
-
+# FUNCTION DEFINITIONS
 class vector:
-    def __init__(self, x, y, z, q):
+    def __init__(self, x, y, z, q=0):
         self.x = x
         self.y = y
         self.z = z
         self.q = q
 
-        self.mag = math.sqrt(math.pow(x, 2) + math.pow(y,2) + math.pow(z,2))
+        self.mag = round(math.sqrt(math.pow(x, 2) + math.pow(y,2) + math.pow(z,2)),3)
 
     def __repr__(self):
-        return "<" + str(self.x) + ", " + str(self.y) + ", " + str(self.z) + ">"
+        return "<" + str(round(self.x,3)) + ", " + str(round(self.y,3)) + ", " + str(round(self.z,3)) + ">"
 
-    def scalmult(self, other):
-        return vector(self.x * other, self.y * other, self.z * other, 0)
+    def __add__(self, other):
+        if isinstance(other, vector):
+            if self.q == 0 and other.q != 0:
+                newq = other.q
+            else:
+                newq = self.q
+            return vector(self.x + other.x, self.y + other.y, self.z + other.z, newq)
+        else:
+            return vector(self.x + other, self.y + other, self.z + other, self.q)
+    
+    def __sub__(self, other):
+        if isinstance(other, vector):
+            if self.q == 0 and other.q != 0:
+                newq = other.q
+            else:
+                newq = self.q
+            return vector(self.x - other.x, self.y - other.y, self.z - other.z, newq)
+        else:
+            return vector(self.x - other, self.y - other, self.z - other, self.q)
 
-    def vecmult(self, vec_other):
-        return vector(self.x * vec_other.x, self.y * vec_other.y, self.z * vec_other.z,0)
+    def __mul__(self, other):
+        if isinstance(other, vector):
+            if self.q == 0 and other.q != 0:
+                newq = other.q
+            else:
+                newq = self.q
+            return vector(self.x * other.x, self.y * other.y, self.z * other.z, newq)
+        else:
+            return vector(self.x * other, self.y * other, self.z * other, self.q)
 
     def hat(self):
-        x_hat = self.x / self.mag
-        y_hat = self.y / self.mag
-        z_hat = self.z / self.mag
+        x_hat = round(self.x / self.mag, 3)
+        y_hat = round(self.y / self.mag, 3)
+        z_hat = round(self.z / self.mag, 3)
         return vector(x_hat, y_hat, z_hat, 0)
 
-def point_charge(vec1, vec2):
-    r = vector(vec2.x - vec1.x, vec2.y - vec1.y, vec2.z - vec1.z,0)
+def point_field(vec1, vec2):
+    r = vec2 - vec1
     r_hat = r.hat()
     constant = oofpez * (vec1.q / pow(r.mag,2))
-    return r.scalmult(constant)
+    return r_hat * constant
+
+def rod_field(L,N,Q, pos):
+    dQ = Q / N
+    dL = L / N
+    rodPos = vector(0,(L / 2) - (dL / 2),0, dQ)
+    print(rodPos)
+    Enet = vector(0,0,0,0)
+    for i in range(0,N):
+        E = point_field(rodPos, pos)
+        #print("Piece number " + str(i + 1) + "'s Field is: " + str(E))
+        Enet += E
+        rodPos.y -= dL
+    return Enet
+
+def ring_field(R,Q,z):
+    return oofpez * (Q * z) / pow(pow(z,2) + pow(R,2), (3 / 2))
+
