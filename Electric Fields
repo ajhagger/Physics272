@@ -1,11 +1,23 @@
 import math
 
 # CONSTANT DECLARATIONS
-oofpez = 9 * pow(10,9)
+oofpez = 9 * pow(10,9) # Electric force constant
+epsilon0 = 8.85 * pow(10, -10) # Vacuum permittivity constant
+e = 1.6 * pow(10, -19) # Elementary charge
 
 # FUNCTION DEFINITIONS
 class vector:
-    def __init__(self, x, y, z, q=0):
+# --------------------------------------------------------------------------------------------
+# Class Initialization: vector
+# Description: Creates a 3D vector indicating the position of a point in space relative to an origin
+# Parameters:
+# - self
+# - x: X-coordinate a distance away from the origin (meters)
+# - y: Y-coordinate a distance away from the origin (meters)
+# - z: Z-coordiante a distance away from the origin (meters)
+# - q: (optional) The inherent charge of this point (Coulombs)
+# --------------------------------------------------------------------------------------------
+    def __init__(self, x=0, y=0, z=0, q=0):
         self.x = x
         self.y = y
         self.z = z
@@ -13,9 +25,22 @@ class vector:
 
         self.mag = round(math.sqrt(math.pow(x, 2) + math.pow(y,2) + math.pow(z,2)),3)
 
+# --------------------------------------------------------------------------------------------
+# Method: __repr__
+# Description: Adds support for console display of vector objects
+# Parameters:
+# - self
+# --------------------------------------------------------------------------------------------
     def __repr__(self):
         return "<" + str(round(self.x,3)) + ", " + str(round(self.y,3)) + ", " + str(round(self.z,3)) + ">"
 
+# --------------------------------------------------------------------------------------------
+# Method: __add__
+# Description: Adds support of vector and scalar addition for vector objects
+# Parameters:
+# - self
+# - other: The value the vector will be added with. (Can be another vector or int)
+# --------------------------------------------------------------------------------------------
     def __add__(self, other):
         if isinstance(other, vector):
             if self.q == 0 and other.q != 0:
@@ -25,7 +50,14 @@ class vector:
             return vector(self.x + other.x, self.y + other.y, self.z + other.z, newq)
         else:
             return vector(self.x + other, self.y + other, self.z + other, self.q)
-    
+
+# --------------------------------------------------------------------------------------------
+# Method: __sub__
+# Description: Adds support of vector and scalar subtraction for vector objects
+# Parameters:
+# - self
+# - other: The value the vector will be subtracted with. (Can be another vector or int)
+# --------------------------------------------------------------------------------------------
     def __sub__(self, other):
         if isinstance(other, vector):
             if self.q == 0 and other.q != 0:
@@ -36,6 +68,13 @@ class vector:
         else:
             return vector(self.x - other, self.y - other, self.z - other, self.q)
 
+# --------------------------------------------------------------------------------------------
+# Method: __mul__
+# Description: Adds support of vector and scalar multiplication for vector objects
+# Parameters:
+# - self
+# - other: The other value being multiplied with the vector. (Can be another vector or int)
+# --------------------------------------------------------------------------------------------
     def __mul__(self, other):
         if isinstance(other, vector):
             if self.q == 0 and other.q != 0:
@@ -46,31 +85,112 @@ class vector:
         else:
             return vector(self.x * other, self.y * other, self.z * other, self.q)
 
+# --------------------------------------------------------------------------------------------
+# Method: hat
+# Description: Calculates the unit vector for a given vector
+# Parameters: 
+# - self
+# --------------------------------------------------------------------------------------------
     def hat(self):
         x_hat = round(self.x / self.mag, 3)
         y_hat = round(self.y / self.mag, 3)
         z_hat = round(self.z / self.mag, 3)
         return vector(x_hat, y_hat, z_hat, 0)
 
+# --------------------------------------------------------------------------------------------
+# Function: point_field
+# Parameters:
+# - vec1: A 3D vector indicating the position of the point in space that will be producing the field
+# - vec2: A 3D vector indicating the position of the point in space that will be experiencing the field
+# --------------------------------------------------------------------------------------------
 def point_field(vec1, vec2):
-    r = vec2 - vec1
+    r = vec2 - vec1 # Distance between 2 points (meters)
     r_hat = r.hat()
     constant = oofpez * (vec1.q / pow(r.mag,2))
     return r_hat * constant
 
+# --------------------------------------------------------------------------------------------
+# Function: rod_field
+# Description: Calculates the total electric field due to a rod at a given position
+# Parameters:
+# - L: The length of the rod (meters)
+# - N: Amount of pieces of the rod taken into account (perfect integral would be infinity)
+# - Q: Total charge of uniform density of the rod (Coulombs)
+# - pos: 3D vector indicating the position of the rod's center in space (meters)
+# --------------------------------------------------------------------------------------------
 def rod_field(L,N,Q, pos):
-    dQ = Q / N
-    dL = L / N
-    rodPos = vector(0,(L / 2) - (dL / 2),0, dQ)
-    print(rodPos)
-    Enet = vector(0,0,0,0)
+    dQ = Q / N # Charge per rod piece (Coulombs)
+    dL = L / N # Length per rod piece (meters)
+    rodPos = vector(0,(L / 2) - (dL / 2),0, dQ) # Current position of rod piece's center
+    Enet = vector(0,0,0,0) # Total net Electric field
+
     for i in range(0,N):
         E = point_field(rodPos, pos)
-        #print("Piece number " + str(i + 1) + "'s Field is: " + str(E))
         Enet += E
         rodPos.y -= dL
     return Enet
 
+# --------------------------------------------------------------------------------------------
+# Function: ring_field
+# Description: Calculates the electric field due to a ring at a distance z away from its center
+# Parameters:
+# - R: Radius of the ring (meters)
+# - Q: Total charge of uniform density in the ring (Coulombs)
+# - z: Observation point a distance away from the ring's center (meters)
+# --------------------------------------------------------------------------------------------
 def ring_field(R,Q,z):
     return oofpez * (Q * z) / pow(pow(z,2) + pow(R,2), (3 / 2))
 
+# --------------------------------------------------------------------------------------------
+# Function: dipole_field
+# Description: Calculates the electric field due to a dipole at a distance r away from its center
+# Parameters:
+# - s: Distance between the 2 particles within the dipole (meters)
+# - Q: Charge magnitude of the dipole (Coulomb)
+# - r: Observation point a distance away from dipole's center (meters)
+# - orientation: Identifier for orientation of observation point relative to dipole.
+#   "a" for along axis, "p" for perpendicular to axis
+# --------------------------------------------------------------------------------------------
+def dipole_field(s,Q,r,orientation):
+    if orientation == "a":
+        return oofpez * (2 * Q * s) / pow(r,3)
+    elif orientation == "p":
+        return oofpez * (Q * s) / pow(r,3)
+    else:
+        print("Invalid Orientation")
+        return 0
+
+# --------------------------------------------------------------------------------------------
+# Function: disk_field
+# Description: Calculates the electric field due to a disk a distance z away from its center
+# Parameters:
+# - R: Radius of the disk (meters)
+# - Q: Total charge of uniform charge density in the disk (Coulombs)
+# - z: Observation point a distance away from disk's center (meters)
+# --------------------------------------------------------------------------------------------
+def disk_field(R,Q,z):
+    A = math.pi * pow(R,2) # Area of disk
+    return ((Q / A) / (2 * epsilon0)) * (1 - (z / (math.sqrt(pow(z,2) + pow(R,2)))))
+
+# --------------------------------------------------------------------------------------------
+# Function: capacitor_field
+# Description: Calculates the electric field within a capacitor
+# Parameters:
+# - R: Radius of each disk in the capacitor (meters)
+# - Q: Total charge of uniform charge density of each disk in capacitor (Coulombs)
+# --------------------------------------------------------------------------------------------
+def capacitor_field(R,Q):
+    A = math.pi * pow(R,2) # Area of each disk in capacitor
+    return (Q / A) / epsilon0
+
+# --------------------------------------------------------------------------------------------
+# Function: fringe_field
+# Description:Calculates the electric field due to a capacitor just outside of the capacitor
+# Parameters:
+# - R: Radius of each disk in the capacitor (meters)
+# - Q: Total charge of uniform charge density of each disk in capacitor (Coulombs)
+# - s: Distance between each disk in the capacitor (meters)
+# --------------------------------------------------------------------------------------------
+def fringe_field(R,Q,s):
+    c_f = capacitor_field(R,Q) # Field of the capacitor
+    return c_f * (s / (2 * R))
